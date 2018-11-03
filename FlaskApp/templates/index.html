@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+            integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+            crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+            crossorigin="anonymous"></script>
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <!-- In <head> -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/12.0.0/nouislider.css" rel="stylesheet">
+
+    <!-- In <body> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/12.0.0/nouislider.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+
+</head>
+<body style="background-color: #37474F" id="gradient">
+<audio autoplay src="/static/mix931 BASSBOOSTED – Паровозик Томас MLG(maxxmusic.org).mp3" style="display:none"
+       id="iframeAudio">
+</audio>
+<div class="col-md-12 leet_body" style="margin-top: 30px; ">
+    <div class="card text-center" style="border: solid 1px black">
+        <div class="card-header" style="background-color: #263238; color: white">
+            Params
+        </div>
+        <div class="card-body" style="background-color: #37474F">
+            <div class="row" style="color: white; margin-bottom: 20px">
+                <div class="col-md-5">
+                    <label for="init_funct">Initial Function (y' = f(x,y))</label>
+                    <input id="init_funct" value="-x + (y * (2*x + 1)) / (x)" type="text" style="width: 60%">
+                </div>
+                <div class="col-md-5">
+                    <label for="solved_funct">Solved Function (y = f(x) + C)</label>
+                    <input id="solved_funct" value="C * pow(exp(1), 2 * x) * x + x / 2" type="text" style="width: 60%">
+                </div>
+            </div>
+            <div class="row" style="color: white">
+                <div class="col-md-5">
+                    <label for="slider">Grid range</label>
+                    <div id="slider" style="margin: 4px 0 10px 10px;"></div>
+                    <label for="slider-value-min" style="margin-left: 10px">From: </label>
+                    <span class="example-val" id="slider-value-min">20.00</span>
+                    <label for="slider-value-max" style="margin-left: 10px">To: </label>
+                    <span class="example-val" id="slider-value-max">80.00</span>
+                </div>
+                <div class="col-md-5">
+                    <label for="slider">Step</label>
+                    <div id="stepSlider" style="margin: 4px 0 10px 10px;"></div>
+                    <span class="example-val" id="stepSlider-val">0.2</span>
+                </div>
+                <button onclick="updateChart()" class="btn btn-outline-success">Process</button>
+            </div>
+        </div>
+    </div>
+    <div id="chartContainer"
+         style="height: 550px; width: 100%; box-shadow: 0 0 10px #424242; margin-top: 20px; border: solid 1px gray">
+    </div>
+    <div class="row">
+        <div id="errorChartContainer" class="col-md-5"
+             style="height: 250px; width: 100%; box-shadow: 0 0 10px #424242; margin-top: 20px; border: solid 1px gray">
+        </div>
+        <div class="col-md-5" style="opacity: 0.5; ">
+            <button class="btn btn-warning" onclick="make_it_leet()"
+                    style="width: 100px; height: 40px; margin-bottom: 10px;color: white; margin: 100px">1337
+            </button>
+        </div>
+    </div>
+    <h4 style="position: fixed; right: 50px; bottom: 50px; color:white; display: none;" id="mainem">Майнем беткоины</h4>
+</div>
+</body>
+
+<script>
+    var exactSolution = [];
+    var eulerMethod = [];
+    var improvedEulerMethod = [];
+    var rungeKuttaMethod = [];
+    var errorEulerMethod = [];
+    var errorImprovedEulerMethod = [];
+    var errorRungeKuttaMethod = [];
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function wait_drop() {
+        await sleep(6000);
+
+        var mainem = document.getElementById('mainem');
+        mainem.style.display = 'block';
+
+        var colors = new Array(
+            [62, 35, 255],
+            [60, 255, 60],
+            [255, 35, 98],
+            [45, 175, 230],
+            [255, 0, 255],
+            [255, 128, 0]);
+
+        var step = 0;
+//color table indices for:
+// current color left
+// next color left
+// current color right
+// next color right
+        var colorIndices = [0, 1, 2, 3];
+
+//transition speed
+        var gradientSpeed = 0.08;
+
+        function updateGradient() {
+
+            if ($ === undefined) return;
+
+            var c0_0 = colors[colorIndices[0]];
+            var c0_1 = colors[colorIndices[1]];
+            var c1_0 = colors[colorIndices[2]];
+            var c1_1 = colors[colorIndices[3]];
+
+            var istep = 1 - step;
+            var r1 = Math.round(istep * c0_0[0] + step * c0_1[0]);
+            var g1 = Math.round(istep * c0_0[1] + step * c0_1[1]);
+            var b1 = Math.round(istep * c0_0[2] + step * c0_1[2]);
+            var color1 = "rgb(" + r1 + "," + g1 + "," + b1 + ")";
+
+            var r2 = Math.round(istep * c1_0[0] + step * c1_1[0]);
+            var g2 = Math.round(istep * c1_0[1] + step * c1_1[1]);
+            var b2 = Math.round(istep * c1_0[2] + step * c1_1[2]);
+            var color2 = "rgb(" + r2 + "," + g2 + "," + b2 + ")";
+
+            $('#gradient').css({
+                background: "-webkit-gradient(linear, left top, right top, from(" + color1 + "), to(" + color2 + "))"
+            }).css({
+                background: "-moz-linear-gradient(left, " + color1 + " 0%, " + color2 + " 100%)"
+            });
+
+            step += gradientSpeed;
+            if (step >= 1) {
+                step %= 1;
+                colorIndices[0] = colorIndices[1];
+                colorIndices[2] = colorIndices[3];
+
+                //pick two new target color indices
+                //do not pick the same as the current one
+                colorIndices[1] = (colorIndices[1] + Math.floor(1 + Math.random() * (colors.length - 1))) % colors.length;
+                colorIndices[3] = (colorIndices[3] + Math.floor(1 + Math.random() * (colors.length - 1))) % colors.length;
+
+            }
+        }
+
+        setInterval(updateGradient, 10);
+    }
+
+    function make_it_leet() {
+        var elementToChange = document.getElementsByTagName("body")[0];
+        elementToChange.style.cursor = "url('/static/ezgif-2-3f86f326c9ce.gif'), auto";
+        var temp = document.getElementById('iframeAudio');
+        temp.play();
+        wait_drop();
+    }
+
+    window.onload = function () {
+        exactSolution.length = 0;
+        eulerMethod.length = 0;
+        improvedEulerMethod.length = 0;
+        rungeKuttaMethod.length = 0;
+        updateChart();
+        var temp = document.getElementById('iframeAudio');
+        temp.pause();
+        var mainem = document.getElementById('mainem');
+        mainem.style.display = 'none';
+    };
+
+    var slider = document.getElementById('slider');
+    var stepSlider = document.getElementById('stepSlider');
+    var init_f = document.getElementById('init_funct');
+    var solved_f = document.getElementById('solved_funct');
+
+    noUiSlider.create(slider, {
+        start: [1, 18.2],
+        step: 0.1,
+        connect: true,
+        range: {
+            'min': -30,
+            'max': 30
+        },
+    });
+
+    noUiSlider.create(stepSlider, {
+        start: 0.2,
+        step: 0.01,
+        connect: true,
+        range: {
+            'min': 0.01,
+            'max': 1
+        },
+    });
+
+    var limitFieldMin = document.getElementById('slider-value-min');
+    var limitFieldMax = document.getElementById('slider-value-max');
+    var stepSliderVal = document.getElementById('stepSlider-val');
+
+    slider.noUiSlider.on('update', function (values, handle) {
+        limitFieldMin.innerText = values[0];
+        limitFieldMax.innerText = values[1];
+    });
+
+    stepSlider.noUiSlider.on('update', function (values, handle) {
+        stepSliderVal.innerText = values[0];
+    });
+
+    var chart = new CanvasJS.Chart("chartContainer", {
+        animationEnabled: true,
+        zoomEnabled: true,
+        theme: "dark2",
+        title: {
+            text: "Result graph"
+        },
+        axisX: {
+            title: "X",
+            interval: 2
+        },
+        axisY: {
+            title: "Y",
+            prefix: "",
+            titleFontColor: "#6D78AD",
+            lineColor: "#6D78AD",
+            gridThickness: 0,
+            lineThickness: 1,
+            //includeZero: false,
+        },
+        axisY2: {
+            title: "Y",
+            prefix: "",
+            titleFontColor: "#51CDA0",
+
+            lineColor: "#51CDA0",
+            gridThickness: 0,
+            lineThickness: 1,
+        },
+        legend: {
+            verticalAlign: "top",
+            fontSize: 16,
+            dockInsidePlotArea: true
+        },
+        data: [
+            {
+                type: "line",
+                axisYType: "secondary",
+                showInLegend: true,
+                name: "Exact solution",
+                dataPoints: exactSolution
+            },
+            {
+                type: "line",
+                axisYType: "secondary",
+                showInLegend: true,
+                name: "Euler Method",
+                dataPoints: eulerMethod
+            },
+            {
+                type: "line",
+                axisYType: "secondary",
+                showInLegend: true,
+                name: "Improved Euler Method",
+                dataPoints: improvedEulerMethod
+            },
+            {
+                type: "line",
+                axisYType: "secondary",
+                showInLegend: true,
+                name: "Runge-Kutta Method",
+                dataPoints: rungeKuttaMethod
+            }
+        ]
+    });
+    chart.render();
+
+    var error_chart = new CanvasJS.Chart("errorChartContainer", {
+        animationEnabled: true,
+        zoomEnabled: true,
+        theme: "dark2",
+        title: {
+            text: "Errors graph"
+        },
+        axisX: {
+            title: "X",
+            interval: 2
+        },
+        axisY: {
+            title: "Error",
+            prefix: "",
+            titleFontColor: "#6D78AD",
+            lineColor: "#6D78AD",
+            gridThickness: 0,
+            lineThickness: 1,
+            //includeZero: false,
+        },
+        axisY2: {
+            title: "Error",
+            prefix: "",
+            titleFontColor: "#51CDA0",
+
+            lineColor: "#51CDA0",
+            gridThickness: 0,
+            lineThickness: 1,
+        },
+        legend: {
+            verticalAlign: "top",
+            fontSize: 16,
+            dockInsidePlotArea: true
+        },
+        data: [
+            {
+                type: "line",
+                axisYType: "secondary",
+                showInLegend: true,
+                name: "Exact solution",
+                dataPoints: []
+            },
+            {
+                type: "line",
+                axisYType: "secondary",
+                showInLegend: true,
+                name: "Euler Method",
+                dataPoints: errorEulerMethod
+            },
+            {
+                type: "line",
+                axisYType: "secondary",
+                showInLegend: true,
+                name: "Improved Euler Method",
+                dataPoints: errorImprovedEulerMethod
+            },
+            {
+                type: "line",
+                axisYType: "secondary",
+                showInLegend: true,
+                name: "Runge-Kutta Method",
+                dataPoints: errorRungeKuttaMethod
+            }
+        ]
+    });
+    error_chart.render();
+
+    function updateChart() {
+        exactSolution.length = 0;
+        eulerMethod.length = 0;
+        improvedEulerMethod.length = 0;
+        rungeKuttaMethod.length = 0;
+        errorEulerMethod.length = 0;
+        errorImprovedEulerMethod.length = 0;
+        errorRungeKuttaMethod.length = 0;
+        $.getJSON(`/getChart?from=${slider.noUiSlider.get()[0]}&funct=x / 2
+                                                               &to=${slider.noUiSlider.get()[1]}
+                                                               &step=${stepSlider.noUiSlider.get()}
+                                                               &x0=1
+                                                               &y0=3
+                                                               &init_f=${encodeURIComponent(init_f.value)}
+                                                               &solved_f=${encodeURIComponent(solved_f.value)}`, function (data) {
+            $.each(data["Exact"], function (key, value) {
+                exactSolution.push({x: parseFloat(value[0]), y: parseFloat(value[1])});
+            });
+            $.each(data["Euler"], function (key, value) {
+                eulerMethod.push({x: parseFloat(value[0]), y: parseFloat(value[1])});
+            });
+            $.each(data["Improved_Euler"], function (key, value) {
+                improvedEulerMethod.push({x: parseFloat(value[0]), y: parseFloat(value[1])});
+            });
+            $.each(data["Runge_Kutta"], function (key, value) {
+                rungeKuttaMethod.push({x: parseFloat(value[0]), y: parseFloat(value[1])});
+            });
+
+            $.each(data["error_Runge_Kutta"], function (key, value) {
+                errorRungeKuttaMethod.push({x: parseFloat(value[0]), y: parseFloat(value[1])});
+            });
+            $.each(data["error_Euler"], function (key, value) {
+                errorEulerMethod.push({x: parseFloat(value[0]), y: parseFloat(value[1])});
+            });
+            $.each(data["error_Impr_Euler"], function (key, value) {
+                errorImprovedEulerMethod.push({x: parseFloat(value[0]), y: parseFloat(value[1])});
+            });
+
+            chart.render();
+            error_chart.render();
+        });
+    }
+
+</script>
+<style>
+
+    @-webkit-keyframes rotating {
+        from {
+            -webkit-transform: rotate(0deg);
+        }
+        to {
+            -webkit-transform: rotate(360deg);
+        }
+    }
+
+    #mainem {
+        -webkit-animation: rotating 1.5s linear infinite;
+    }
+</style>
+</html>
